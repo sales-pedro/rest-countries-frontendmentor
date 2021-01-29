@@ -1,65 +1,178 @@
-import Head from 'next/head'
-import styles from '../styles/Home.module.css'
+//pages/index.js
+import Head from "next/head";
+import Link from "next/link";
+import React, { useState } from "react";
 
-export default function Home() {
+import Header from '../components/Header'
+
+import { getAllCountries, getQueryCountries, getQueryRegion } from "../lib/api";
+
+import {  Box,
+          Container,
+          Text,
+          Image,
+          Flex,
+          Wrap,
+          WrapItem,
+          Input,
+          IconButton,
+          InputLeftElement,
+          InputGroup,
+          Menu,
+          MenuButton,
+          MenuList,
+          Button,
+          MenuItem,
+          Spacer
+        } from "@chakra-ui/react";
+import { SearchIcon, ChevronDownIcon } from "@chakra-ui/icons";
+
+export default function Home({ data }) {
+  
+  const [countries, setCountries] = useState(data);
+  const [query, setQuery] = useState("");
+  const [value, setValue]= useState("");
+  console.log(value, "Value fora do handleChange 1")
+  console.log(countries)
+  
+  const handleSubmit = async (e) => {
+    await e.preventDefault();
+    const res = await getQueryCountries(query);
+    console.log(query)
+    await setCountries(res);
+    await setQuery("");
+  };
+  
+  const handleChange = async (e) =>{
+    
+    setValue(e)
+    console.log(value, "value depois do setValue 2");
+    const res = await getQueryRegion(value);
+    console.log(value, "Value depois do getQuery 3");
+    await setCountries(res);
+    console.log(value, "Value depois do setCountries 4");
+  }
+
   return (
-    <div className={styles.container}>
+    <div>
       <Head>
-        <title>Create Next App</title>
+        <title> REST Countries</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
+      <Box overflow="hidden" bg="gray.100" minH="100vh">
+      <Header />
+      <Container maxW="8xl">
 
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
+        
+        
+        <Flex mx={20}>
 
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
+        <form onSubmit={handleSubmit}>
+            <InputGroup mb={10} boxShadow="xl">
+              <Input 
+                size="lg" 
+                placeholder="Search for a country" 
+                variant="ghost" 
+                
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                />
 
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
+              <InputLeftElement
+                children={
+                  <IconButton
+                    aria-label="Search"
+                    icon={<SearchIcon />}
+                    bg="bg-transparent"
+                    color="gray.500"
 
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
+                    onClick={handleSubmit}
+                  />
+                }
+              />
+            </InputGroup>
+          </form>
 
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
+          <Spacer />
+
+          <Menu>
+            <MenuButton as={Button} rightIcon={<ChevronDownIcon />}>
+              Filter by region
+            </MenuButton>
+            <MenuList>
+              <MenuItem onClick={(e) => handleChange(e.target.value)} value="Africa">Africa</MenuItem>
+              <MenuItem onClick={(e) => handleChange(e.target.value)} value="Americas">Americas</MenuItem>
+              <MenuItem onClick={(e) => handleChange(e.target.value)} value="Asia">Asia</MenuItem>
+              <MenuItem  onClick={(e) => handleChange(e.target.value)} value="Europe">Europe</MenuItem>
+              <MenuItem  onClick={(e) => handleChange(e.target.value)} value="Oceania">Oceania</MenuItem>
+            </MenuList>
+          </Menu>
+        </Flex>
+
+      <Wrap px="1rem" spacing={10} justify="center">
+     {
+        countries.map((country) => (
+          <WrapItem
+            maxW="sm" 
+            borderRadius="lg" 
+            overflow="hidden"
+            boxShadow="xl"
+            key={country.alpha3Code}
+            bg="white"
           >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />
-        </a>
-      </footer>
+          <Box>
+            <Link href={`/countries/${country.alpha3Code}`}>
+              <a>
+                <Image src={country.flag} alt={country.name}/>
+              </a>
+            </Link>
+            <Box p={6} > 
+              <Text mb={3} fontSize="xl"fontWeight="bold">{country.name}</Text>
+              <Flex>
+                <Text><b>Population:</b> {country.population}</Text>
+              </Flex>
+              <Flex>
+                <Text><b>Region:</b> {country.region}</Text>
+              </Flex>
+              <Flex>
+                <Text><b>Capital:</b> {country.capital}</Text>
+              </Flex>
+            </Box>
+          </Box>
+          </WrapItem>
+        ))
+      }
+      </Wrap>
+      </Container>
+      </Box>
     </div>
-  )
+  );
 }
+
+
+export async function getServerSideProps() {
+  const data = await getAllCountries();
+  return {
+    props: {
+      data
+    },
+  };
+}
+
+/*
+
+        <select 
+          name="value" 
+          id="value" 
+          value={value} 
+          onChange={(e) => handleChange(e.target.value)}
+        >
+          <option value="select" >Filter by region</option>
+          <option value="Africa">Africa</option>
+          <option value="Americas">Americas</option>
+          <option value="Asia">Asia</option>
+          <option value="Europe">Europe</option>
+          <option value="Oceania">Oceania</option>
+        </select>
+
+*/
